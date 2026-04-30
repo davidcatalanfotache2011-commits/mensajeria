@@ -108,7 +108,6 @@
         .wa-chat {
             flex: 1;
             background-color: #0b141a;
-            /* Patrón de fondo clásico de WA */
             background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
             background-size: contain;
             overflow-y: auto;
@@ -145,9 +144,9 @@
             font-size: 12px;
             font-weight: bold;
             margin-bottom: 4px;
-            color: #53bdeb; /* Color del nombre del otro */
+            color: #53bdeb;
         }
-        .msg.sent .msg-sender { display: none; } /* Ocultamos nuestro propio nombre */
+        .msg.sent .msg-sender { display: none; }
 
         .msg-text { margin-bottom: 10px; }
         .msg-time {
@@ -209,7 +208,6 @@
     </div>
 
     <div id="wa-app">
-        
         <div class="wa-header">
             <div class="wa-avatar" id="contact-avatar">D</div>
             <div class="wa-header-info">
@@ -218,8 +216,7 @@
             </div>
         </div>
 
-        <div class="wa-chat" id="messages">
-            </div>
+        <div class="wa-chat" id="messages"></div>
 
         <div class="wa-footer">
             <input type="text" id="chat-input" placeholder="Escribe un mensaje" onkeypress="if(event.key === 'Enter') enviarMensaje()">
@@ -227,12 +224,23 @@
                 <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M1.101 21.757 23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817z"></path></svg>
             </button>
         </div>
-
     </div>
 
     <script>
         let socket;
         let currentUser;
+
+        // Lee la URL al cargar la página. Si le pasas ?server=URL_DE_NGROK la caja se esconde
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const serverParam = urlParams.get('server');
+            
+            if (serverParam) {
+                const ngrokInput = document.getElementById("ngrok-url");
+                ngrokInput.value = serverParam;
+                ngrokInput.style.display = "none"; // Oculta la caja de Ngrok a Daniela
+            }
+        };
 
         function login() {
             let url = document.getElementById("ngrok-url").value.trim();
@@ -241,7 +249,7 @@
             const errorMsg = document.getElementById("error-msg");
 
             if (!url) {
-                errorMsg.innerText = "Falta la URL de Ngrok.";
+                errorMsg.innerText = "Falta la URL de Ngrok. (O el enlace que te pasaron no está completo).";
                 errorMsg.style.display = "block";
                 return;
             }
@@ -251,11 +259,9 @@
             if ((user === "David" && pass === "david") || (user === "Daniela" && pass === "daniela")) {
                 currentUser = user;
                 
-                // Ocultar login y mostrar WhatsApp
                 document.getElementById("login-screen").style.display = "none";
                 document.getElementById("wa-app").style.display = "flex";
                 
-                // Configurar el nombre del contacto en la cabecera
                 const contactName = (user === "David") ? "Daniela" : "David";
                 document.getElementById("contact-name").innerText = contactName;
                 document.getElementById("contact-avatar").innerText = contactName.charAt(0);
@@ -268,9 +274,9 @@
         }
 
         function iniciarChat(serverUrl) {
-            // SOLUCIÓN FINAL: Forzar WebSockets y enviar cabeceras
+            // AQUÍ ESTÁ LA MAGIA PARA SALTARSE NGROK: transports: ['websocket']
             socket = io(serverUrl, {
-                transports: ['websocket'], // Nos saltamos el HTTP y la pantalla de Ngrok
+                transports: ['websocket'],
                 extraHeaders: {
                     "ngrok-skip-browser-warning": "true"
                 }
@@ -306,14 +312,11 @@
             const box = document.getElementById('messages');
             const isSent = (usuario === currentUser);
             
-            // Crear contenedor del globo
             const wrapper = document.createElement('div');
             wrapper.className = `msg-wrapper ${isSent ? 'sent' : 'received'}`;
             
-            // Hora actual
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            // HTML interno del mensaje
             wrapper.innerHTML = `
                 <div class="msg ${isSent ? 'sent' : 'received'}">
                     <div class="msg-sender">${usuario}</div>
@@ -323,7 +326,7 @@
             `;
             
             box.appendChild(wrapper);
-            box.scrollTop = box.scrollHeight; // Auto-scroll hacia el último mensaje
+            box.scrollTop = box.scrollHeight;
         }
     </script>
 </body>
