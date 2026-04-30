@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp</title>
+    <title>WhatsApp Web</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         /* Estilos Generales - Modo Oscuro WhatsApp */
         body {
             font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #111b21; /* Fondo principal */
+            background-color: #111b21;
             margin: 0;
             color: #e9edef;
             display: flex;
@@ -104,7 +104,7 @@
         .wa-header-info h2 { margin: 0; font-size: 16px; font-weight: 500; }
         .wa-header-info p { margin: 2px 0 0; font-size: 13px; color: #8696a0; }
 
-        /* Área de mensajes (Fondo de garabatos) */
+        /* Área de mensajes */
         .wa-chat {
             flex: 1;
             background-color: #0b141a;
@@ -255,7 +255,7 @@
                 document.getElementById("login-screen").style.display = "none";
                 document.getElementById("wa-app").style.display = "flex";
                 
-                // Configurar el nombre del contacto en la barra superior (el otro usuario)
+                // Configurar el nombre del contacto en la cabecera
                 const contactName = (user === "David") ? "Daniela" : "David";
                 document.getElementById("contact-name").innerText = contactName;
                 document.getElementById("contact-avatar").innerText = contactName.charAt(0);
@@ -268,8 +268,9 @@
         }
 
         function iniciarChat(serverUrl) {
-            // AQUÍ ESTÁ LA SOLUCIÓN MÁGICA PARA NGROK (extraHeaders)
+            // SOLUCIÓN FINAL: Forzar WebSockets y enviar cabeceras
             socket = io(serverUrl, {
+                transports: ['websocket'], // Nos saltamos el HTTP y la pantalla de Ngrok
                 extraHeaders: {
                     "ngrok-skip-browser-warning": "true"
                 }
@@ -285,8 +286,9 @@
                 mostrarMensaje(data.user, data.text);
             });
             
-            socket.on('connect_error', () => {
-                alert("Error de conexión. Revisa que el Kali y Ngrok estén encendidos.");
+            socket.on('connect_error', (err) => {
+                console.log("Error de conexión:", err);
+                alert("Error de conexión. Revisa que el servidor Node y Ngrok estén encendidos en Kali.");
             });
         }
 
@@ -304,14 +306,14 @@
             const box = document.getElementById('messages');
             const isSent = (usuario === currentUser);
             
-            // Crear el contenedor de la burbuja
+            // Crear contenedor del globo
             const wrapper = document.createElement('div');
             wrapper.className = `msg-wrapper ${isSent ? 'sent' : 'received'}`;
             
-            // Obtener la hora actual en formato corto (Ej: 14:30)
+            // Hora actual
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            // HTML de la burbuja de WhatsApp
+            // HTML interno del mensaje
             wrapper.innerHTML = `
                 <div class="msg ${isSent ? 'sent' : 'received'}">
                     <div class="msg-sender">${usuario}</div>
@@ -321,7 +323,7 @@
             `;
             
             box.appendChild(wrapper);
-            box.scrollTop = box.scrollHeight; // Auto-scroll
+            box.scrollTop = box.scrollHeight; // Auto-scroll hacia el último mensaje
         }
     </script>
 </body>
