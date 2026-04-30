@@ -3,39 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Privado</title>
+    <title>WhatsApp</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #2c2f33; margin: 0; color: #fff; }
-        .container { background: #23272a; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); text-align: center; width: 350px; }
-        input { width: 90%; padding: 10px; margin: 10px 0; border: none; border-radius: 4px; background: #40444b; color: white; }
-        button { width: 100%; padding: 10px; background-color: #7289da; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button:hover { background-color: #5b6eae; }
-        #error-msg { color: #f04747; display: none; margin-bottom: 10px; font-size: 14px; }
-        #chat-box { display: none; width: 400px; }
-        #messages { height: 300px; overflow-y: auto; background: #40444b; border-radius: 4px; margin-bottom: 10px; padding: 10px; text-align: left; }
-        .msg { margin-bottom: 8px; word-break: break-all; }
-        .msg strong { color: #7289da; }
+        /* Estilos Generales - Modo Oscuro WhatsApp */
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #111b21; /* Fondo principal */
+            margin: 0;
+            color: #e9edef;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Pantalla de Login */
+        #login-screen {
+            background: #202c33;
+            padding: 40px;
+            border-radius: 10px;
+            width: 320px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        #login-screen img {
+            width: 60px;
+            margin-bottom: 20px;
+        }
+        #login-screen h2 { margin-top: 0; font-weight: normal; color: #e9edef; }
+        #login-screen input {
+            width: 90%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background: #2a3942;
+            color: #fff;
+            outline: none;
+        }
+        #login-screen button {
+            width: 100%;
+            padding: 12px;
+            background-color: #00a884;
+            color: #111b21;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+        #login-screen button:hover { background-color: #008f6f; }
+        #error-msg { color: #f15c6d; display: none; margin-bottom: 10px; font-size: 14px; }
+
+        /* Contenedor Principal del Chat */
+        #wa-app {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            max-width: 1000px;
+            background: #111b21;
+            flex-direction: column;
+            position: relative;
+        }
+        @media (min-width: 800px) {
+            #wa-app {
+                height: 95vh;
+                border-radius: 0;
+                border-left: 1px solid #202c33;
+                border-right: 1px solid #202c33;
+            }
+        }
+
+        /* Cabecera (Top bar) */
+        .wa-header {
+            background: #202c33;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            height: 60px;
+            box-sizing: border-box;
+            border-bottom: 1px solid #313d45;
+        }
+        .wa-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #dfe5e7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #111b21;
+            font-weight: bold;
+            font-size: 20px;
+            overflow: hidden;
+        }
+        .wa-header-info { flex: 1; }
+        .wa-header-info h2 { margin: 0; font-size: 16px; font-weight: 500; }
+        .wa-header-info p { margin: 2px 0 0; font-size: 13px; color: #8696a0; }
+
+        /* Área de mensajes (Fondo de garabatos) */
+        .wa-chat {
+            flex: 1;
+            background-color: #0b141a;
+            /* Patrón de fondo clásico de WA */
+            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            background-size: contain;
+            overflow-y: auto;
+            padding: 20px 5%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Globos de Mensaje */
+        .msg-wrapper {
+            display: flex;
+            margin-bottom: 12px;
+            width: 100%;
+        }
+        .msg-wrapper.sent { justify-content: flex-end; }
+        .msg-wrapper.received { justify-content: flex-start; }
+        
+        .msg {
+            max-width: 65%;
+            padding: 6px 7px 8px 9px;
+            border-radius: 7.5px;
+            position: relative;
+            font-size: 14.2px;
+            line-height: 19px;
+            word-wrap: break-word;
+            box-shadow: 0 1px 0.5px rgba(11,20,26,.13);
+            display: flex;
+            flex-direction: column;
+        }
+        .msg.sent { background-color: #005c4b; border-top-right-radius: 0; }
+        .msg.received { background-color: #202c33; border-top-left-radius: 0; }
+
+        .msg-sender {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #53bdeb; /* Color del nombre del otro */
+        }
+        .msg.sent .msg-sender { display: none; } /* Ocultamos nuestro propio nombre */
+
+        .msg-text { margin-bottom: 10px; }
+        .msg-time {
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+            align-self: flex-end;
+            margin-top: -10px;
+            margin-left: 15px;
+            float: right;
+        }
+
+        /* Barra de texto abajo */
+        .wa-footer {
+            background: #202c33;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            height: 62px;
+            box-sizing: border-box;
+        }
+        .wa-footer input {
+            flex: 1;
+            background: #2a3942;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            color: #e9edef;
+            font-size: 15px;
+            outline: none;
+        }
+        .wa-footer button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #00a884;
+            color: #111b21;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .wa-footer button:hover { background: #008f6f; }
     </style>
 </head>
 <body>
 
-    <div class="container" id="login-box">
-        <h2>Ingreso al Chat</h2>
-        <input type="text" id="ngrok-url" placeholder="URL de Ngrok">
-        <input type="text" id="username" placeholder="Usuario (David o Daniela)">
+    <div id="login-screen">
+        <svg viewBox="0 0 39 39" width="60" height="60" style="margin-bottom: 20px;">
+            <path fill="#00a884" d="M10.7 32.8l.6.3c2.5 1.5 5.3 2.2 8.1 2.2 8.8 0 16-7.2 16-16s-7.2-16-16-16-16 7.2-16 16c0 2.8.7 5.6 2.2 8.1l.3.6-2.4 8.7 8.9-2.4c-.1-.1-.1-.2 0-.5zm8.8 4.2c-2.9 0-5.8-.8-8.3-2.3l-.6-.3-6.2 1.7 1.7-6.1-.4-.6c-1.6-2.6-2.5-5.6-2.5-8.6C3.2 10.5 11.2 2.5 21 2.5s17.8 8 17.8 17.8-8 17.7-19.3 16.7zm8.3-11.4c-.5-.2-2.7-1.3-3.1-1.5-.4-.2-.7-.2-1 .2-.3.5-1.2 1.5-1.4 1.8-.3.3-.5.4-1 .2-.5-.2-1.9-.7-3.6-2.2-1.3-1.2-2.2-2.6-2.5-3.1-.2-.5 0-.7.2-1 .2-.2.5-.5.7-.8.2-.3.3-.5.5-.8.2-.3.1-.6 0-.8s-1-2.4-1.4-3.3c-.4-.9-.8-.8-1-.8h-.9c-.3 0-.8.1-1.3.6-.5.5-1.8 1.8-1.8 4.3s1.9 5 2.1 5.3c.2.3 3.6 5.5 8.7 7.7 1.2.5 2.2.8 2.9 1 .1.1.2.1.3.1 1.2.2 2.4.1 3.3-.1.9-.2 2.7-1.1 3.1-2.2.4-1.1.4-2 .3-2.2-.2-.3-.5-.5-1-.7z"/>
+        </svg>
+        <h2>WhatsApp Web</h2>
+        <input type="text" id="ngrok-url" placeholder="URL de Ngrok (https://...)">
+        <input type="text" id="username" placeholder="Usuario">
         <input type="password" id="password" placeholder="Contraseña">
-        <div id="error-msg">Credenciales incorrectas o falta la URL.</div>
+        <div id="error-msg">Credenciales incorrectas o URL vacía.</div>
         <button onclick="login()">Conectar</button>
     </div>
 
-    <div class="container" id="chat-box">
-        <h2 id="welcome-msg"></h2>
-        <div id="messages"></div>
-        <div style="display: flex; gap: 10px;">
-            <input type="text" id="chat-input" placeholder="Escribe tu mensaje..." onkeypress="if(event.key === 'Enter') enviarMensaje()">
-            <button style="width: 30%;" onclick="enviarMensaje()">Enviar</button>
+    <div id="wa-app">
+        
+        <div class="wa-header">
+            <div class="wa-avatar" id="contact-avatar">D</div>
+            <div class="wa-header-info">
+                <h2 id="contact-name">Contacto</h2>
+                <p>en línea</p>
+            </div>
         </div>
+
+        <div class="wa-chat" id="messages">
+            </div>
+
+        <div class="wa-footer">
+            <input type="text" id="chat-input" placeholder="Escribe un mensaje" onkeypress="if(event.key === 'Enter') enviarMensaje()">
+            <button onclick="enviarMensaje()">
+                <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M1.101 21.757 23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817z"></path></svg>
+            </button>
+        </div>
+
     </div>
 
     <script>
@@ -43,34 +235,31 @@
         let currentUser;
 
         function login() {
-            // Recoger los datos de las cajas de texto
             let url = document.getElementById("ngrok-url").value.trim();
             const user = document.getElementById("username").value.trim();
             const pass = document.getElementById("password").value.trim();
             const errorMsg = document.getElementById("error-msg");
 
-            // Validar que se ha puesto una URL
             if (!url) {
-                errorMsg.innerText = "Por favor, introduce tu URL de Ngrok.";
+                errorMsg.innerText = "Falta la URL de Ngrok.";
                 errorMsg.style.display = "block";
                 return;
             }
 
-            // Quitar la barra final de la URL si el usuario la pone por accidente
-            if (url.endsWith('/')) {
-                url = url.slice(0, -1);
-            }
+            if (url.endsWith('/')) url = url.slice(0, -1);
 
-            // Validar credenciales (David o Daniela)
             if ((user === "David" && pass === "david") || (user === "Daniela" && pass === "daniela")) {
                 currentUser = user;
                 
-                // Cambiar las pantallas
-                document.getElementById("login-box").style.display = "none";
-                document.getElementById("chat-box").style.display = "block";
-                document.getElementById("welcome-msg").innerText = "Chat de " + user;
+                // Ocultar login y mostrar WhatsApp
+                document.getElementById("login-screen").style.display = "none";
+                document.getElementById("wa-app").style.display = "flex";
                 
-                // Llamar a la función que conecta con el Kali
+                // Configurar el nombre del contacto en la barra superior (el otro usuario)
+                const contactName = (user === "David") ? "Daniela" : "David";
+                document.getElementById("contact-name").innerText = contactName;
+                document.getElementById("contact-avatar").innerText = contactName.charAt(0);
+                
                 iniciarChat(url);
             } else {
                 errorMsg.innerText = "Usuario o contraseña incorrectos.";
@@ -79,24 +268,25 @@
         }
 
         function iniciarChat(serverUrl) {
-            // Conectar con el servidor usando la URL de Ngrok proporcionada
-            socket = io(serverUrl);
+            // AQUÍ ESTÁ LA SOLUCIÓN MÁGICA PARA NGROK (extraHeaders)
+            socket = io(serverUrl, {
+                extraHeaders: {
+                    "ngrok-skip-browser-warning": "true"
+                }
+            });
 
-            // Al conectar, recibimos el historial de mensajes de la base de datos
             socket.on('historial', (mensajesGuardados) => {
                 const box = document.getElementById('messages');
                 box.innerHTML = '';
                 mensajesGuardados.forEach(msg => mostrarMensaje(msg.user, msg.text));
             });
 
-            // Escuchar mensajes nuevos en tiempo real
             socket.on('mensaje_recibido', (data) => {
                 mostrarMensaje(data.user, data.text);
             });
             
-            // Si hay error de conexión
             socket.on('connect_error', () => {
-                alert("Error: No se pudo conectar a " + serverUrl + ". ¿Está el servidor de Kali encendido?");
+                alert("Error de conexión. Revisa que el Kali y Ngrok estén encendidos.");
             });
         }
 
@@ -105,7 +295,6 @@
             const texto = input.value.trim();
             
             if (texto !== "") {
-                // Enviar el mensaje al servidor (Kali)
                 socket.emit('nuevo_mensaje', { user: currentUser, text: texto });
                 input.value = ''; 
             }
@@ -113,18 +302,26 @@
 
         function mostrarMensaje(usuario, texto) {
             const box = document.getElementById('messages');
-            const div = document.createElement('div');
-            div.className = 'msg';
+            const isSent = (usuario === currentUser);
             
-            // Si el mensaje es tuyo, le ponemos otro color
-            if (usuario === currentUser) {
-                div.innerHTML = `<strong style="color: #43b581;">Tú:</strong> ${texto}`;
-            } else {
-                div.innerHTML = `<strong>${usuario}:</strong> ${texto}`;
-            }
+            // Crear el contenedor de la burbuja
+            const wrapper = document.createElement('div');
+            wrapper.className = `msg-wrapper ${isSent ? 'sent' : 'received'}`;
             
-            box.appendChild(div);
-            box.scrollTop = box.scrollHeight; // Auto-bajar la barra de scroll
+            // Obtener la hora actual en formato corto (Ej: 14:30)
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // HTML de la burbuja de WhatsApp
+            wrapper.innerHTML = `
+                <div class="msg ${isSent ? 'sent' : 'received'}">
+                    <div class="msg-sender">${usuario}</div>
+                    <div class="msg-text">${texto}</div>
+                    <div class="msg-time">${time}</div>
+                </div>
+            `;
+            
+            box.appendChild(wrapper);
+            box.scrollTop = box.scrollHeight; // Auto-scroll
         }
     </script>
 </body>
